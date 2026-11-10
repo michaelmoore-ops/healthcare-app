@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: healthcare-app-api
+    runtime: docker
+    dockerfilePath: ./TS_2026_BE/Dockerfile
+    dockerContext: ./TS_2026_BE
+    plan: free
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
