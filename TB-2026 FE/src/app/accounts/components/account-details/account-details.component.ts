@@ -14,18 +14,18 @@ import { SharepointConfigComponent } from '../sharepoint-config/sharepoint-confi
 import groupBy from 'lodash/groupBy';
 import { APP_ROUTES_PATH_CONST } from '../../../core/constants/app-routing-contants';
 import { ProfileImageComponent } from "../../../shared/components/profile-image/profile-image.component";
-import { atLeastOneCheckboxCheckedValidator } from '../../../shared/validator/atLeastOneCheckboxChecked.validator';
 import { filter } from 'rxjs';
 import { CommonService } from '../../../shared/services/common.service';
+import { AccountFacadeService } from '../../services/account-facade.service';
 
 @Component({
   selector: 'app-account-details',
   imports: [ACCOUNT_IMPORTS, ...[SharepointConfigComponent], ProfileImageComponent],
+  providers: [AccountFacadeService], // A new instance is created when AccountDetailsComponent mounts, destroyed when it unmounts.  No manual purging of previous data required now.
   templateUrl: './account-details.component.html',
   styleUrl: './account-details.component.scss'
 })
 export class AccountDetailsComponent implements OnInit {
-
 
   public accountId: string | null = '';
   public checks: any = [];
