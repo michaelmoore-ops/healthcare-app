@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --configuration=dev",
+    "ionic:serve": "ng serve --configuration=dev",
     "start:sprint": "ng serve --configuration=sprint",
     "build": "ng build --configuration=prod",
     "build:sprint": "ng build --configuration=sprint",

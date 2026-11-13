@@ -13,7 +13,7 @@ describe('AccountDetailsComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    facadeSpy = jasmine.createSpyObj<AccountFacadeService>('AccountFacadeService', ['initialize']);
+    facadeSpy = jasmine.createSpyObj<AccountFacadeService>('AccountFacadeService', ['initialize', 'refresh']);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
@@ -45,15 +45,29 @@ describe('AccountDetailsComponent', () => {
     expect(component.facade).toBe(facadeSpy);
   });
 
-  describe('ngOnInit', () => {
-    it('should initialize the facade exactly once', () => {
-      fixture.detectChanges(); // triggers ngOnInit
+  describe('Ionic view lifecycle', () => {
+    it('should not touch the facade on creation (no Angular init hook)', () => {
+      fixture.detectChanges();
 
-      expect(facadeSpy.initialize).toHaveBeenCalledTimes(1);
+      expect(facadeSpy.initialize).not.toHaveBeenCalled();
+      expect(facadeSpy.refresh).not.toHaveBeenCalled();
     });
 
-    it('should not initialize the facade before the component is initialized', () => {
-      expect(facadeSpy.initialize).not.toHaveBeenCalled();
+    it('should initialize the facade on first ionViewWillEnter without refreshing', () => {
+      component.ionViewWillEnter();
+
+      expect(facadeSpy.initialize).toHaveBeenCalledTimes(1);
+      expect(facadeSpy.refresh).not.toHaveBeenCalled();
+    });
+
+    it('should refresh, not re-initialize, when a cached page is re-entered', () => {
+      component.ionViewWillEnter();
+      component.ionViewWillLeave();
+      component.ionViewDidLeave();
+      component.ionViewWillEnter();
+
+      expect(facadeSpy.initialize).toHaveBeenCalledTimes(1);
+      expect(facadeSpy.refresh).toHaveBeenCalledTimes(1);
     });
   });
 

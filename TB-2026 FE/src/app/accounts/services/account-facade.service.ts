@@ -2,10 +2,11 @@
 
 import { Injectable, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, merge } from 'rxjs';
 import {
   distinctUntilChanged,
   filter,
+  map,
   switchMap,
   takeUntil,
   tap
@@ -27,6 +28,9 @@ export class AccountFacadeService implements OnDestroy {
 
   // ── Single account-id channel (fixes the dual-channel async bug) ──────────
   private readonly accountId$ = new BehaviorSubject<string | null>(null);
+
+  // ── Manual reload trigger (cached Ionic page re-entry) ────────────────────
+  private readonly reload$ = new Subject<void>();
 
   // ── State subjects ────────────────────────────────────────────────────────
   private readonly _account$             = new BehaviorSubject<AccountDetailViewModel | null>(null);
@@ -77,11 +81,16 @@ export class AccountFacadeService implements OnDestroy {
     private readonly notificationService: NotificationService,
   ) {}
 
-  // ── Bootstrap (called once from AccountDetailsComponent.ngOnInit) ─────────
+  // ── Bootstrap (called once from AccountDetailsComponent.onSetup) ──────────
   initialize(): void {
     this._wireRouteParams();
     this._wireStateService();
     this._wireAccountLoad();
+  }
+
+  /** Re-fetches the current account, e.g. when a cached page is re-entered. */
+  refresh(): void {
+    this.reload$.next();
   }
 
   // ── Channel 1: URL route params ───────────────────────────────────────────
@@ -115,11 +124,18 @@ export class AccountFacadeService implements OnDestroy {
       });
   }
 
-  // ── Unified load: fires once per DISTINCT accountId ──────────────────────
+  // ── Unified load: fires once per DISTINCT accountId, or on refresh() ─────
   private _wireAccountLoad(): void {
-    this.accountId$.pipe(
-      filter((id): id is string => !!id),
-      distinctUntilChanged(),             // ← prevents duplicate loads from both channels
+    merge(
+      this.accountId$.pipe(
+        filter((id): id is string => !!id),
+        distinctUntilChanged()            // ← prevents duplicate loads from both channels
+      ),
+      this.reload$.pipe(
+        map(() => this.accountId$.value),
+        filter((id): id is string => !!id)
+      )
+    ).pipe(
       tap(() => this._loading$.next(true)),
       switchMap(id => this.accountApiService.getAccountById(id)), // ← cancels in-flight on new id
       takeUntil(this.destroy$)

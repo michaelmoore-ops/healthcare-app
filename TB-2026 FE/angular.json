@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "healthcareapplication": {
+    "app": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -123,16 +123,16 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "prod": {
-              "buildTarget": "healthcareapplication:build:prod"
+              "buildTarget": "app:build:prod"
             },
             "sprint": {
-              "buildTarget": "healthcareapplication:build:sprint"
+              "buildTarget": "app:build:sprint"
             },
             "dev": {
-              "buildTarget": "healthcareapplication:build:dev"
+              "buildTarget": "app:build:dev"
             },
             "qa": {
-              "buildTarget": "healthcareapplication:build:qa"
+              "buildTarget": "app:build:qa"
             }
           },
           "defaultConfiguration": "dev"

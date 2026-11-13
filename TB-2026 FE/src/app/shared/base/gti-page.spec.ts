@@ -3,19 +3,23 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { NEVER, Subject } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
-import { GTIPage, GTIPageEnterContext, GTIPageLifecycleMode, trackByKey } from './gti-page';
+import { GTIPage, GTIPageEnterContext, trackByKey } from './gti-page';
 
 class TestPage extends GTIPage {
   setupCalls = 0;
   loads: GTIPageEnterContext[] = [];
   teardownCalls = 0;
+  events: string[] = [];
 
-  constructor(injector: Injector, protected override readonly lifecycleMode: GTIPageLifecycleMode = 'angular') {
+  constructor(injector: Injector) {
     super(injector);
   }
 
-  protected override onSetup(): void { this.setupCalls++; }
-  protected override loadData(ctx: GTIPageEnterContext): void { this.loads.push(ctx); }
+  protected override onSetup(): void { this.setupCalls++; this.events.push('setup'); }
+  protected override onViewDidEnter(): void { this.events.push('didEnter'); }
+  protected override onViewWillLeave(): void { this.events.push('willLeave'); }
+  protected override onViewDidLeave(): void { this.events.push('didLeave'); }
+  protected override loadData(ctx: GTIPageEnterContext): void { this.loads.push(ctx); this.events.push('load'); }
   protected override onTeardown(): void { this.teardownCalls++; }
 
   // Expose protected helpers for testing
@@ -37,29 +41,39 @@ describe('GTIPage', () => {
     injector = TestBed.inject(Injector);
   });
 
-  describe('angular lifecycle mode', () => {
-    it('runs setup and loadData once from ngOnInit', () => {
-      const page = new TestPage(injector, 'angular');
-      page.ngOnInit();
-      page.ionViewWillEnter(); // ignored in angular mode
-
-      expect(page.setupCalls).toBe(1);
-      expect(page.loads).toEqual([{ isFirstEnter: true }]);
-    });
-  });
-
-  describe('ionic lifecycle mode', () => {
-    it('loads data on every ionViewWillEnter, not ngOnInit', () => {
-      const page = new TestPage(injector, 'ionic');
-      page.ngOnInit();
-      expect(page.setupCalls).toBe(1);
-      expect(page.loads.length).toBe(0);
-
+  describe('Ionic view lifecycle', () => {
+    it('runs setup once, then loadData on every ionViewWillEnter', () => {
+      const page = new TestPage(injector);
       page.ionViewWillEnter();
       page.ionViewWillLeave();
       page.ionViewWillEnter();
 
+      expect(page.setupCalls).toBe(1);
       expect(page.loads).toEqual([{ isFirstEnter: true }, { isFirstEnter: false }]);
+    });
+
+    it('runs setup before the first loadData', () => {
+      const page = new TestPage(injector);
+      page.ionViewWillEnter();
+
+      expect(page.events).toEqual(['setup', 'load']);
+    });
+
+    it('forwards each Ionic hook to its stub', () => {
+      const page = new TestPage(injector);
+      page.ionViewWillEnter();
+      page.ionViewDidEnter();
+      page.ionViewWillLeave();
+      page.ionViewDidLeave();
+
+      expect(page.events).toEqual(['setup', 'load', 'didEnter', 'willLeave', 'didLeave']);
+    });
+
+    it('does nothing until Ionic enters the view', () => {
+      const page = new TestPage(injector);
+
+      expect(page.setupCalls).toBe(0);
+      expect(page.loads.length).toBe(0);
     });
   });
 
@@ -76,7 +90,7 @@ describe('GTIPage', () => {
     });
 
     it('untilViewLeave completes on ionViewWillLeave', () => {
-      const page = new TestPage(injector, 'ionic');
+      const page = new TestPage(injector);
       let completed = false;
       new Subject<number>().pipe(page.exposeUntilViewLeave<number>())
         .subscribe({ complete: () => (completed = true) });

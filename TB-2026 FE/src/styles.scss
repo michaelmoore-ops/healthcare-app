@@ -576,3 +576,23 @@ header{
   width: 18px;
   height: 18px;
 }
+
+/*
+ * Ionic page outlet inside the Bootstrap layout.
+ * Ionic positions the outlet and each page absolutely (for stacked transitions).
+ * Transitions are disabled on this outlet and Ionic hides inactive pages with
+ * .ion-page-hidden, so the active page can stay in normal document flow.
+ */
+ion-router-outlet.app-page-outlet {
+  position: relative;
+  display: block;
+  contain: none;
+  z-index: auto;
+
+  > .ion-page {
+    position: relative;
+    display: block;
+    contain: none;
+    z-index: auto;
+  }
+}

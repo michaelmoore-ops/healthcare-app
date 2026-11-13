@@ -9,7 +9,8 @@
             <main class="flex-grow-1 overflow-auto">
                 <div class="card border-0 userlist-container w-100 h-100 overflow-auto p-3"
                     style="background-color: #EBEBEB;">
-                    <router-outlet></router-outlet>
+                    <!-- Ionic outlet: enables ionView* lifecycle hooks and page caching -->
+                    <ion-router-outlet class="app-page-outlet" [animated]="false"></ion-router-outlet>
                 </div>
             </main>
 

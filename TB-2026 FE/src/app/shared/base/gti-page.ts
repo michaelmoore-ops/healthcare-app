@@ -1,22 +1,14 @@
 // src/app/shared/base/gti-page.ts
 
-import { Directive, Injector, OnDestroy, OnInit } from '@angular/core';
+import { Directive, Injector, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
 import { MonoTypeOperatorFunction, Observable, Subject, merge } from 'rxjs';
 import { distinctUntilChanged, map, take, takeUntil } from 'rxjs/operators';
+import type { ViewDidEnter, ViewDidLeave, ViewWillEnter, ViewWillLeave } from '@ionic/angular/standalone';
 import { NotificationService } from '../../core/services/notification.service';
 
-/**
- * How the page receives "view enter" events.
- *  - 'angular': plain Angular routing. Every navigation to the page creates a
- *               new instance, so data loads from ngOnInit.
- *  - 'ionic':   an Ionic <ion-router-outlet> caches pages. ngOnInit runs only
- *               once, so data loads from ionViewWillEnter on every visit.
- */
-export type GTIPageLifecycleMode = 'angular' | 'ionic';
-
-/** Context passed to {@link GTIPage.loadData} on each view entry. */
+/** Context passed to {@link GTIPage.loadData} on each ionViewWillEnter. */
 export interface GTIPageEnterContext {
   /** True only on the first entry for this page instance. */
   readonly isFirstEnter: boolean;
@@ -40,11 +32,13 @@ export function trackByIndex(index: number): number {
 }
 
 /**
- * Shared base class for routed pages. It standardizes these coding standards:
+ * Shared base class for pages rendered inside <ion-router-outlet>. It
+ * standardizes these coding standards:
  *
- *  1. Lifecycle: one-time setup goes in {@link onSetup}. Data fetching goes in
- *     {@link loadData}, which runs on every view entry (ionViewWillEnter for
- *     Ionic, ngOnInit for plain Angular).
+ *  1. Lifecycle: pages are driven by Ionic's view hooks, not ngOnInit.
+ *     {@link onSetup} runs once, on the first ionViewWillEnter.
+ *     {@link loadData} runs on every ionViewWillEnter, including re-entry
+ *     to a page Ionic has cached.
  *  2. Teardown: {@link untilDestroyed}, {@link untilViewLeave} and {@link once}
  *     replace manual subscription management (takeUntil pattern, Angular 13 safe).
  *  3. trackBy: {@link trackById} and {@link trackByIndex} are available in every template.
@@ -53,8 +47,12 @@ export function trackByIndex(index: number): number {
  * Keep pages thin. API calls, business rules and native integrations belong in
  * injectable services or facades. The base class deliberately has no data access.
  *
+ * Ionic hooks fire only for components routed through <ion-router-outlet>.
+ * Ionic has no destroy hook, so final teardown still uses Angular's ngOnDestroy.
+ *
  * Angular 13 compatibility: dependencies come from an Injector passed to super()
  * instead of `inject()`, because field-level `inject()` requires Angular 14+.
+ * On Ionic 6 / Angular 13, import the hook interfaces from '@ionic/angular'.
  *
  * @example
  *   @Component({ ... })
@@ -71,16 +69,13 @@ export function trackByIndex(index: number): number {
  *   }
  */
 @Directive()
-export abstract class GTIPage implements OnInit, OnDestroy {
-
-  // ── Configuration (subclasses may override) ───────────────────────────────
-  /** Set to 'ionic' in pages rendered inside <ion-router-outlet>. */
-  protected readonly lifecycleMode: GTIPageLifecycleMode = 'angular';
+export abstract class GTIPage
+  implements ViewWillEnter, ViewDidEnter, ViewWillLeave, ViewDidLeave, OnDestroy {
 
   // ── Teardown signals ──────────────────────────────────────────────────────
   /** Emits once and completes when the component is destroyed. */
   protected readonly destroy$ = new Subject<void>();
-  /** Emits whenever the user leaves the view (Ionic leave, or destroy). */
+  /** Emits whenever the user leaves the view (ionViewWillLeave, or destroy). */
   protected readonly viewLeave$ = new Subject<void>();
 
   // ── Shared trackBy helpers (usable directly in templates) ─────────────────
@@ -98,35 +93,37 @@ export abstract class GTIPage implements OnInit, OnDestroy {
   protected get notification(): NotificationService { return this.injector.get(NotificationService); }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  Framework lifecycle hooks. To add behavior, implement the stubs below.
+  //  Ionic view lifecycle. To add behavior, implement the stubs below.
   //  If you must override one of these, use `override` and call super.
   // ══════════════════════════════════════════════════════════════════════════
 
-  ngOnInit(): void {
-    this.onSetup();
-    if (this.lifecycleMode === 'angular') {
-      this.enterView();
-    }
-  }
-
-  /** Ionic calls this on every visit, including re-entry to a cached page. */
+  /** Before the view animates in. Fires on first entry and on every re-entry. */
   ionViewWillEnter(): void {
-    if (this.lifecycleMode === 'ionic') {
-      this.enterView();
+    const isFirstEnter = !this.hasEntered;
+    this.hasEntered = true;
+    if (isFirstEnter) {
+      this.onSetup();
     }
+    this.loadData({ isFirstEnter });
   }
 
-  /** Ionic calls this after the enter transition finishes. */
+  /** After the view has finished animating in. */
   ionViewDidEnter(): void {
     this.onViewDidEnter();
   }
 
-  /** Ionic calls this before the page is hidden. The page stays cached. */
+  /** Before the view animates out. The page may stay cached afterwards. */
   ionViewWillLeave(): void {
     this.viewLeave$.next();
     this.onViewWillLeave();
   }
 
+  /** After the view has finished animating out. */
+  ionViewDidLeave(): void {
+    this.onViewDidLeave();
+  }
+
+  /** Ionic has no destroy hook, so final teardown stays on Angular's. */
   ngOnDestroy(): void {
     this.viewLeave$.next();
     this.viewLeave$.complete();
@@ -139,11 +136,15 @@ export abstract class GTIPage implements OnInit, OnDestroy {
   //  Stubs for subclasses to override (all optional, all no-op by default)
   // ══════════════════════════════════════════════════════════════════════════
 
-  /** One-time setup that does NOT need to refresh on re-entry (forms, static config). */
+  /**
+   * One-time setup that does NOT need to refresh on re-entry (forms, static
+   * config, long-lived stream wiring). Runs on the first ionViewWillEnter,
+   * just before the first {@link loadData}.
+   */
   protected onSetup(): void {}
 
   /**
-   * Fetch or refresh the page's data. Runs on every view entry.
+   * Fetch or refresh the page's data. Runs on every ionViewWillEnter.
    * Bind subscriptions with {@link untilViewLeave} so re-entry doesn't stack them.
    */
   protected loadData(_context: GTIPageEnterContext): void {}
@@ -153,6 +154,9 @@ export abstract class GTIPage implements OnInit, OnDestroy {
 
   /** Before the view is hidden (pause media, save drafts). */
   protected onViewWillLeave(): void {}
+
+  /** After the view is hidden (release heavy resources while cached). */
+  protected onViewDidLeave(): void {}
 
   /** Final cleanup of resources not handled by destroy$ (timers, 3rd-party widgets). */
   protected onTeardown(): void {}
@@ -206,7 +210,7 @@ export abstract class GTIPage implements OnInit, OnDestroy {
   }
 
   protected navigateTo(commands: unknown[], extras?: NavigationExtras): Promise<boolean> {
-    return this.router.navigate(commands, extras);
+    return extras ? this.router.navigate(commands, extras) : this.router.navigate(commands);
   }
 
   /**
@@ -235,13 +239,5 @@ export abstract class GTIPage implements OnInit, OnDestroy {
     if (userMessage) {
       this.notification.error(userMessage);
     }
-  }
-
-  // ── Internals ─────────────────────────────────────────────────────────────
-
-  private enterView(): void {
-    const isFirstEnter = !this.hasEntered;
-    this.hasEntered = true;
-    this.loadData({ isFirstEnter });
   }
 }
