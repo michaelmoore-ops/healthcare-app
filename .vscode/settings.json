@@ -1,0 +1,4 @@
+{
+  "typescript.tsdk": "TB-2026 FE/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
