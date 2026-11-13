@@ -9,6 +9,7 @@ import { loaderInterceptor } from './core/interceptors/loader.interceptor';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
 import { ToastNoAnimationModule, ToastrModule } from 'ngx-toastr';
+import { provideIonicAngular } from '@ionic/angular/standalone';
 export const versionConfig = {
   version: '3.0'
 };
@@ -30,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     })
 ),
     provideAnimations(),
+    provideIonicAngular(),
 
     { provide: 'AppConfig', useValue: versionConfig }
   ]
