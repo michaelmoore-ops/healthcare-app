@@ -1,0 +1,30 @@
+<div class="card">
+  <div class="card-body customs-container">
+    <div class="page-header">Account Setup</div>
+
+    <div class="custom-main-tab-block">
+      <tabset class="custom-tabset-block">
+
+        <tab (selectTab)="onSelect('2')">
+          <ng-template tabHeading>
+            Sharepoint
+            <span class="status-badge text-warning"
+              *ngIf="account?.isSharePointConnected === false && !account?.sharePointConnectionError">
+              <i class="fas fa-shield-alt"></i>
+            </span>
+            <span class="status-badge text-success"
+              *ngIf="account?.isSharePointConnected">
+              <i class="fas fa-shield-alt"></i>
+            </span>
+            <span class="status-badge text-danger"
+              *ngIf="account?.sharePointConnectionError">
+              <i class="fas fa-shield-alt"></i>
+            </span>
+          </ng-template>
+          <app-sharepoint-config [accountData]="account"></app-sharepoint-config>
+        </tab>
+
+      </tabset>
+    </div>
+  </div>
+</div>

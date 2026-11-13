@@ -1,0 +1,74 @@
+@use '../../../../assets/scss/variables/color-variables.scss' as colors;
+
+.check-container {
+  background-color: colors.$white;
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+}
+
+.check-section {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.check-text h4 {
+  font-size: 1.25rem;
+}
+
+.check-text p {
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.accordion-card {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+}
+
+.accordian-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.expand-link {
+  color: colors.$primary-purple;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.details {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  color: #1A1A1A;
+  .label {
+    color: #4D4D4D;
+  }
+}
+
+.hr-dark-text {
+  color: #333333;
+}
+
+.custom-text-size15 {
+  font-size: 15px;
+}
+
+.custom-tab-header {
+  max-height: calc(100vh - 290px);
+  overflow: auto;
+}
+
+.custom-tab-block {
+  flex: 1 1 auto;
+  max-height: calc(100vh - 347px);
+  overflow: auto;
+}

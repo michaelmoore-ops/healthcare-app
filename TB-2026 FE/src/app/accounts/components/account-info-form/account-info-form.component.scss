@@ -1,0 +1,55 @@
+@use '../../../../assets/scss/variables/color-variables.scss' as colors;
+
+.contact-card {
+  color: colors.$gray-60;
+  position: relative;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  gap: 10px;
+  position: relative;
+}
+
+.icon {
+  color: #888;
+  margin-top: 3px;
+}
+
+.email-link {
+  color: colors.$gray-60;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.email-link:hover {
+  text-decoration: underline;
+}
+
+.copy-icon,
+.edit-icon {
+  color: colors.$primary-light-blue;
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 14px;
+}
+
+.address-text {
+  flex: 1;
+  white-space: pre-line;
+}
+
+.custom-max-height {
+  max-height: 150px;
+}
+
+.custom-max-width {
+  max-width: 180px;
+}
+
+.logo-img {
+  max-height: 80px;
+  object-fit: contain;
+}

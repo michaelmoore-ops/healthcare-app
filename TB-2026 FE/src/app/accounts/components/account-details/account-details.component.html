@@ -1,159 +1,30 @@
 <div class="customs-container p-4">
     <!-- Main container for account details -->
+    @let account = facade.account$ | async;
 
     <div class="row h-100">
-        <!-- Left Section: Account Details -->
+        <!-- Left Section: Account info, profile image and address form -->
         <div class="col-3 h-100">
-            <div class="card h-100">
-                <div class="card-body d-flex flex-column overflow-auto" style="height: calc(100vh - 180px);">
-                    <div>
-                        <!-- Header Section -->
-                        <div class="page-header">
-                            <button type="button" class="btn btn-sm btn-outline mb-1"
-                                (click)="backToAccountGrid()">
-                                <i class="fa-solid fa-arrow-left mr-2"></i>
-                            </button>
-                            <span class="m-3 text-center">Account Details</span>
-                        </div>
-
-                        <!-- Account Profile Image -->
-                        <div class="d-flex justify-content-center mb-3">
-                            <app-profile-image [profileImageUrl]="accountImgUrl" [formData]="imageFormData"
-                                [removeImagePayload]="removeImagePayload"
-                                [showUploadAndRemoveButtons]="true"></app-profile-image>
-                        </div>
-
-                        <!-- Contact Information -->
-                        <div class="contact-card py-2 overflow-auto">
-                            <!-- Account Name -->
-                            <div class="info-row">
-                                <i class="fa fa-building icon"></i>
-                                <span class="info-label fw-bold overflow-auto">{{ accountDetails.accountName }}</span>
-                            </div>
-
-                            <!-- Account Email -->
-                            <div class="info-row d-flex">
-                                <i class="fa fa-envelope icon"></i>
-                                <div class="col overflow-auto custom-max-height custom-max-width">
-                                    <a class="email-link" [href]="'mailto:' + accountDetails.accountEmail">{{
-                                        accountDetails.accountEmail }}</a>
-                                </div>
-                                <div class="col-auto d-flex justify-content-end align-self-center">
-                                    <i class="fa fa-copy copy-icon" title="Copy Email" (click)="copyEmail()"></i>
-                                </div>
-                            </div>
-
-
-                            <!-- Account Address -->
-                            <div class="info-row d-flex mb-0" *ngIf="!editAccount">
-                                <i class="fa fa-map-marker-alt icon"></i>
-                                <div class="col overflow-auto custom-max-height custom-max-width">
-                                    <span class="address-text">
-                                        <ng-container *ngFor="let line of getFormattedAddress; let i = index">
-                                            {{ line }}<br *ngIf="i < getFormattedAddress.length - 1" />
-                                        </ng-container>
-                                    </span>
-                                </div>
-                                <div class="col-auto d-flex justify-content-end">
-                                    <i class="fa fa-pen edit-icon" title="Edit Address" (click)="(editAccount = true)"
-                                        ></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Editable Form for Address -->
-                    <div class="h-auto p-1" *ngIf="editAccount">
-                        <form [formGroup]="accountForm" class="py-2">
-                            <!-- City Input -->
-                            <div class="form-group">
-                                <label for="city" class="form-label">City </label>
-                                <input id="city" type="text" class="form-control" formControlName="city"
-                                    placeholder="city" [ngClass]="{'is-invalid': errorMsg.city}">
-                                <div class="invalid-feedback">
-                                    {{ errorMsg.city }}
-                                </div>
-                            </div>
-
-                            <!-- State Input -->
-                            <div class="form-group">
-                                <label for="state" class="form-label">State </label>
-                                <input id="state" type="text" class="form-control" formControlName="state"
-                                    placeholder="state" [ngClass]="{'is-invalid': errorMsg.state}">
-                                <div class="invalid-feedback">
-                                    {{ errorMsg.state }}
-                                </div>
-                            </div>
-
-                            <!-- Address 1 Input -->
-                            <div class="form-group">
-                                <label for="address1" class="form-label">Address 1</label>
-                                <textarea id="address1" rows="2" class="form-control" formControlName="address1"
-                                    placeholder="Enter Address"></textarea>
-                            </div>
-
-                            <!-- Address 2 Input -->
-                            <div class="form-group">
-                                <label for="address2" class="form-label">Address 2</label>
-                                <textarea id="address2" rows="2" class="form-control" formControlName="address2"
-                                    placeholder="Enter Address"></textarea>
-                            </div>
-
-                            <!-- Zip Code Input -->
-                            <div class="form-group">
-                                <label for="zip" class="form-label">Zip</label>
-                                <input id="zip" type="text" class="form-control" formControlName="zipCode"
-                                    placeholder="zip">
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Save/Cancel Buttons -->
-                    <div class="pt-3 bg-white" *ngIf="editAccount">
-                        <button class="btn btn-sm custom-cancel-button px-4 py-2 me-2" (click)="(editAccount = false)">
-                            Cancel
-                        </button>
-                        <button class="btn btn-sm btn-teal htc-border-radius px-4 py-2" (click)="updateAccountInfo()">
-                            Save
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <app-account-info-form
+                [account]="account"
+                [accountImgUrl]="(facade.accountImgUrl$ | async) ?? ''"
+                (back)="backToAccountGrid()">
+            </app-account-info-form>
         </div>
 
-        <!-- Right Section: Tabs -->
+        <!-- Right Section: Compliance tabs -->
         <div class="col-9">
-            <div class="card">
-                <div class="card-body customs-container">
-                    <div class="page-header">Account Setup</div>
-
-                    <div class="custom-main-tab-block">
-                        <tabset class="custom-tabset-block">
-
-                            <!-- SharePoint Tab -->
-                            <tab (selectTab)="onSelect('2')">
-                                <ng-template tabHeading>
-                                    Sharepoint
-                                    <span class="status-badge text-warning"
-                                        *ngIf="accountDetails?.isSharePointConnected === false && !accountDetails?.sharePointConnectionError">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </span>
-                                    <span class="status-badge text-success"
-                                        *ngIf="accountDetails?.isSharePointConnected">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </span>
-                                    <span class="status-badge text-danger"
-                                        *ngIf="accountDetails?.sharePointConnectionError">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </span>
-                                </ng-template>
-                                <app-sharepoint-config [accountData]="accountDetails"></app-sharepoint-config>
-                            </tab>
-
-                        </tabset>
-                    </div>
-                </div>
-            </div>
+            <app-account-compliance
+                [account]="account"
+                [checks]="(facade.checks$ | async) ?? []"
+                [accessoryTools]="(facade.accessoryTools$ | async) ?? []"
+                [groupedLookupData]="(facade.groupedLookupData$ | async) ?? []"
+                [selectedChecks]="(facade.selectedChecks$ | async) ?? []"
+                [selectedAccessoryTools]="(facade.selectedAccessoryTools$ | async) ?? []"
+                [accountScrappedData]="(facade.accountScrappedData$ | async) ?? []"
+                [isSuperAdmin]="facade.isSuperAdmin"
+                [isAdmin]="facade.isAdmin">
+            </app-account-compliance>
         </div>
     </div>
 </div>

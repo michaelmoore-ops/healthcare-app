@@ -54,6 +54,8 @@ export interface AccountDetailViewModel extends AccountListViewModel {
     city: string;
     state: string;
     zipCode: string;
+    isSharePointConnected?: boolean;
+    sharePointConnectionError?: string | null;
 }
 
 export interface SharepointConfigurations {
