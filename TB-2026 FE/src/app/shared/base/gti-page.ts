@@ -1,5 +1,7 @@
 // src/app/shared/base/gti-page.ts
 
+// Enforce the use of methods by prepending the class and methods with the `abstract` keyword where appropriate.
+
 import { Directive, Injector, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
